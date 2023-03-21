@@ -58,6 +58,7 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies, body string, compl
 
 		err = json.Unmarshal(data, responseStruct)
 		check(err)
+		addToCache(cookies, endpoint, data)
 	}
 
 	if res.StatusCode >= 400 {
@@ -65,7 +66,21 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies, body string, compl
 	}
 }
 
-func FetchTrpc[ret structs.JsonStruct](methods []string, cookie string, responseStruct *ret) {
-	m := strings.Join(methods, ",")
-	Fetch("get", fmt.Sprintf("/trpc/%s", m), cookie, "", false, responseStruct)
+func FetchTrpc[ret structs.JsonStruct](methods any, cookie string, responseStruct *ret) {
+	switch m := methods.(type) {
+	case []string:
+		methods = strings.Join(m, ",")
+	case string:
+		break
+	default:
+		log.Fatal("invalid method type")
+	}
+	methods = fmt.Sprintf("/trpc/%s", methods)
+	cachedData := getFromCache(cookie, methods.(string))
+	if cachedData == nil {
+		Fetch("get", methods.(string), cookie, "", false, responseStruct)
+	} else {
+		err := json.Unmarshal(cachedData, responseStruct)
+		check(err)
+	}
 }

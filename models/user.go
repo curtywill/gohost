@@ -19,7 +19,7 @@ func LoginWithCookie(cookie string) User {
 
 func (u User) userInfo() structs.LoggedIn {
 	r := structs.LoggedIn{}
-	requests.FetchTrpc([]string{"login.loggedIn"}, u.cookie, &r)
+	requests.FetchTrpc("login.loggedIn", u.cookie, &r)
 
 	return r
 }
@@ -54,7 +54,7 @@ func (u User) Activated() bool {
 
 func (u User) GetRawEditedProjects() structs.ListEditedProjects {
 	r := structs.ListEditedProjects{}
-	requests.FetchTrpc([]string{"projects.listEditedProjects"}, u.cookie, &r)
+	requests.FetchTrpc("projects.listEditedProjects", u.cookie, &r)
 
 	return r
 }

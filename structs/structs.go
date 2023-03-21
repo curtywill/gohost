@@ -21,6 +21,7 @@ type ListEditedProjects struct {
 	Projects []EditedProject `json:"projects"`
 }
 
+// TODO: investigate real types of flags and frequently use tags (probably strings)
 type EditedProject struct {
 	AvatarShape        string   `json:"avatarShape"`
 	AvatarURL          string   `json:"avatarURL"`
