@@ -59,13 +59,12 @@ func (u User) GetRawEditedProjects() structs.ListEditedProjects {
 	return r
 }
 
-// func (u User) GetEditedProjects() []Project {
-// 	projectsRaw := u.getRawEditedProjects()
-// 	projects := []Project{}
-// 	for _, project := range projectsRaw {
-// 		p := project.(map[string]interface{})
-// 		projects = append(projects, NewProject(p))
-// 	}
+func (u User) GetEditedProjects() []Project {
+	projectsRaw := u.GetRawEditedProjects()
+	projects := []Project{}
+	for _, project := range projectsRaw.Projects {
+		projects = append(projects, NewProject(project, u))
+	}
 
-// 	return projects
-// }
+	return projects
+}
