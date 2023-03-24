@@ -50,11 +50,14 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies, body string, compl
 		res, err = client.Do(req)
 		check(err)
 
-		bytes, err := io.ReadAll(res.Body)
+		data, err := io.ReadAll(res.Body)
 		check(err)
 
 		defer res.Body.Close()
-		data := extractData(bytes)
+		// "result" -> "data" nesting is only for trpc endpoints
+		if endpoint[1:5] == "trpc" {
+			data = extractData(data)
+		}
 
 		err = json.Unmarshal(data, responseStruct)
 		check(err)

@@ -5,7 +5,8 @@ package structs
 
 type JsonStruct interface {
 	LoggedIn |
-		ListEditedProjects
+		ListEditedProjects |
+		ProjectPosts
 }
 
 type LoggedIn struct {
@@ -36,4 +37,24 @@ type EditedProject struct {
 	ProjectId          int      `json:"projectId"`
 	Flags              [][]byte `json:"flags"`
 	FrequentlyUsedTags [][]byte `json:"frequentlyUsedTags"`
+}
+
+type ProjectPosts struct {
+	NumItems int                 `json:"nItems"`
+	Items    []ProjectPostsItems `json:"items"`
+}
+
+// add rest of stuff
+type ProjectPostsItems struct {
+	PostId            int           `json:"postId"`
+	Headline          string        `json:"headline"`
+	PublishedAt       string        `json:"publishedAt"`
+	Filename          string        `json:"filename"`
+	State             int           `json:"state"`
+	NumComments       int           `json:"numComments"`
+	NumSharedComments int           `json:"numSharedComments"`
+	ContentWarnings   []string      `json:"cws"`
+	Tags              []string      `json:"tags"`
+	PlainTextBody     string        `json:"plainTextBody"`
+	PostingProject    EditedProject `json:"postingProject"`
 }
