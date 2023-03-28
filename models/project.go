@@ -1,9 +1,11 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"gohost/requests"
 	"gohost/structs"
+	"log"
 )
 
 type Project struct {
@@ -70,7 +72,25 @@ func (p Project) FrequentlyUsedTags() [][]byte {
 func (p Project) GetRawPosts(page int) structs.ProjectPosts {
 	r := structs.ProjectPosts{}
 
-	requests.Fetch("get", fmt.Sprintf("/project/%s/posts?page=%d", p.Handle(), page), p.u.cookie, "", false, &r)
+	requests.Fetch("get", fmt.Sprintf("/project/%s/posts?page=%d", p.Handle(), page), p.u.cookie, nil, false, &r)
 
 	return r
+}
+
+type postRequest struct {
+	AdultContent    bool             `json:"adultContent"`
+	Blocks          []structs.Blocks `json:"blocks"`
+	Tags            []string         `json:"tags"`
+	ContentWarnings []string         `json:"cws"`
+	Headline        string           `json:"headline"`
+	PostState       int              `json:"postState"`
+}
+
+func (p Project) Post(adult bool, blocks []structs.Blocks, tags, cws []string, headline string, postState int) {
+	r := postRequest{adult, blocks, tags, cws, headline, postState}
+	reqBody, err := json.Marshal(r)
+	if err != nil {
+		log.Fatal(err)
+	}
+	requests.Fetch[structs.Filler]("post", fmt.Sprintf("/project/%s/posts", p.Handle()), p.u.cookie, reqBody, false, nil)
 }

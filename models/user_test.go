@@ -1,6 +1,7 @@
 package models
 
 import (
+	"gohost/structs"
 	"testing"
 )
 
@@ -26,7 +27,11 @@ var u User = LoginWithCookie("s%3AT2AjSKWV3yE3yPJEyNN2kNZFuzswEib-.zdF3uSoGZfvsS
 // 	//t.Log(projects[1].ProjectId())
 // }
 
-func TestGetRawPosts(t *testing.T) {
-	projects := u.GetEditedProjects()
-	t.Log(projects[0].GetRawPosts(0))
+// func TestGetRawPosts(t *testing.T) {
+// 	projects := u.GetEditedProjects()
+// 	t.Log(projects[0].GetRawPosts(0))
+// }
+
+func TestPost(t *testing.T) {
+	u.GetEditedProjects()[0].Post(false, []structs.Blocks{{Type: "markdown", Markdown: &structs.MarkdownBlock{Content: "i tweeted this with golang"}}}, []string{"golang", "API"}, []string{}, "AUTOMATED POST", 1)
 }

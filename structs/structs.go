@@ -6,7 +6,8 @@ package structs
 type JsonStruct interface {
 	LoggedIn |
 		ListEditedProjects |
-		ProjectPosts
+		ProjectPosts |
+		Filler
 }
 
 type LoggedIn struct {
@@ -40,21 +41,44 @@ type EditedProject struct {
 }
 
 type ProjectPosts struct {
-	NumItems int                 `json:"nItems"`
-	Items    []ProjectPostsItems `json:"items"`
+	NumItems int     `json:"nItems"`
+	Items    []Items `json:"items"`
 }
 
 // add rest of stuff
-type ProjectPostsItems struct {
-	PostId            int           `json:"postId"`
-	Headline          string        `json:"headline"`
-	PublishedAt       string        `json:"publishedAt"`
-	Filename          string        `json:"filename"`
-	State             int           `json:"state"`
-	NumComments       int           `json:"numComments"`
-	NumSharedComments int           `json:"numSharedComments"`
-	ContentWarnings   []string      `json:"cws"`
-	Tags              []string      `json:"tags"`
-	PlainTextBody     string        `json:"plainTextBody"`
-	PostingProject    EditedProject `json:"postingProject"`
+type Items struct {
+	PostId                   int           `json:"postId"`
+	Headline                 string        `json:"headline"`
+	PublishedAt              string        `json:"publishedAt"`
+	Filename                 string        `json:"filename"`
+	State                    int           `json:"state"`
+	NumComments              int           `json:"numComments"`
+	NumSharedComments        int           `json:"numSharedComments"`
+	ContentWarnings          []string      `json:"cws"`
+	Tags                     []string      `json:"tags"`
+	Blocks                   []Blocks      `json:"blocks"`
+	PlainTextBody            string        `json:"plainTextBody"`
+	PostingProject           EditedProject `json:"postingProject"`
+	TransparentShareOfPostId int           `json:"transparentShareOfPostId"`
+	ShareTree                []Items       `json:"shareTree"`
 }
+
+// blocks are pointers to get an empty value (nil in this case) for omitempty to work
+type Blocks struct {
+	Type       string           `json:"type"`
+	Attachment *AttachmentBlock `json:"attachment,omitempty"`
+	Markdown   *MarkdownBlock   `json:"markdown,omitempty"`
+}
+
+type AttachmentBlock struct {
+	FileURL      string `json:"fileURL"`
+	PreviewURL   string `json:"previewURL"`
+	AttachmentId string `json:"attachmentId"`
+	AltText      string `json:"altText"`
+}
+
+type MarkdownBlock struct {
+	Content string `json:"content"`
+}
+
+type Filler struct{}

@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"gohost/structs"
@@ -36,7 +37,7 @@ func extractData(body []byte) json.RawMessage {
 	return data
 }
 
-func Fetch[ret structs.JsonStruct](method, endpoint, cookies, body string, complex bool, responseStruct *ret) {
+func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, body []byte, complex bool, responseStruct *ret) {
 	var res *http.Response
 	client := &http.Client{}
 	url := base_url + endpoint
@@ -62,10 +63,20 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies, body string, compl
 		err = json.Unmarshal(data, responseStruct)
 		check(err)
 		addToCache(cookies, endpoint, data)
+	} else if method == http.MethodPost {
+		r := bytes.NewReader(body)
+		req, err := http.NewRequest(http.MethodPost, url, r)
+		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+		check(err)
+
+		req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
+
+		res, err = client.Do(req)
+		check(err)
 	}
 
 	if res.StatusCode >= 400 {
-		log.Fatal("bad request")
+		log.Fatalf("bad request: %d", res.StatusCode)
 	}
 }
 
@@ -81,7 +92,7 @@ func FetchTrpc[ret structs.JsonStruct](methods any, cookie string, responseStruc
 	methods = fmt.Sprintf("/trpc/%s", methods)
 	cachedData := getFromCache(cookie, methods.(string))
 	if cachedData == nil {
-		Fetch("get", methods.(string), cookie, "", false, responseStruct)
+		Fetch("get", methods.(string), cookie, nil, false, responseStruct)
 	} else {
 		err := json.Unmarshal(cachedData, responseStruct)
 		check(err)
