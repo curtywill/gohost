@@ -1,7 +1,6 @@
 package requests
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"gohost/structs"
@@ -37,7 +36,7 @@ func extractData(body []byte) json.RawMessage {
 	return data
 }
 
-func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, body []byte, complex bool, responseStruct *ret) {
+func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, headers map[string]string, reader io.Reader, complex bool, responseStruct *ret) {
 	var res *http.Response
 	client := &http.Client{}
 	url := base_url + endpoint
@@ -64,15 +63,36 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, body []byte
 		check(err)
 		addToCache(cookies, endpoint, data)
 	} else if method == http.MethodPost {
-		r := bytes.NewReader(body)
-		req, err := http.NewRequest(http.MethodPost, url, r)
-		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+		req, err := http.NewRequest(http.MethodPost, url, reader)
+		check(err)
+
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+
+		req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
+
+		res, err = client.Do(req)
+		check(err)
+
+		if responseStruct != nil {
+			data, err := io.ReadAll(res.Body)
+			check(err)
+
+			defer res.Body.Close()
+
+			err = json.Unmarshal(data, responseStruct)
+			check(err)
+		}
+	} else if method == http.MethodPut {
+		req, err := http.NewRequest(http.MethodPut, url, reader)
 		check(err)
 
 		req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
 
 		res, err = client.Do(req)
 		check(err)
+
 	}
 
 	if res.StatusCode >= 400 {
@@ -80,7 +100,7 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, body []byte
 	}
 }
 
-func FetchTrpc[ret structs.JsonStruct](methods any, cookie string, responseStruct *ret) {
+func FetchTrpc[ret structs.JsonStruct](methods any, cookie string, headers map[string]string, responseStruct *ret) {
 	switch m := methods.(type) {
 	case []string:
 		methods = strings.Join(m, ",")
@@ -92,7 +112,7 @@ func FetchTrpc[ret structs.JsonStruct](methods any, cookie string, responseStruc
 	methods = fmt.Sprintf("/trpc/%s", methods)
 	cachedData := getFromCache(cookie, methods.(string))
 	if cachedData == nil {
-		Fetch("get", methods.(string), cookie, nil, false, responseStruct)
+		Fetch("get", methods.(string), cookie, headers, nil, false, responseStruct)
 	} else {
 		err := json.Unmarshal(cachedData, responseStruct)
 		check(err)

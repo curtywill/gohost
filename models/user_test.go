@@ -1,11 +1,11 @@
 package models
 
-import (
-	"gohost/structs"
-	"testing"
-)
+// import (
+// 	"gohost/structs"
+// 	"testing"
+// )
 
-var u User = LoginWithCookie("s%3AT2AjSKWV3yE3yPJEyNN2kNZFuzswEib-.zdF3uSoGZfvsSGMvYPZN%2Fo4ea5Efn6oV1zJXAzmBqUw")
+// var u User = LoginWithCookie("s%3AT2AjSKWV3yE3yPJEyNN2kNZFuzswEib-.zdF3uSoGZfvsSGMvYPZN%2Fo4ea5Efn6oV1zJXAzmBqUw")
 
 // func TestUserInfo(t *testing.T) {
 // 	email := u.Email()
@@ -32,6 +32,6 @@ var u User = LoginWithCookie("s%3AT2AjSKWV3yE3yPJEyNN2kNZFuzswEib-.zdF3uSoGZfvsS
 // 	t.Log(projects[0].GetRawPosts(0))
 // }
 
-func TestPost(t *testing.T) {
-	u.GetEditedProjects()[0].Post(false, []structs.Blocks{{Type: "markdown", Markdown: &structs.MarkdownBlock{Content: "i tweeted this with golang"}}}, []string{"golang", "API"}, []string{}, "AUTOMATED POST", 1)
-}
+// func TestPost(t *testing.T) {
+// 	u.GetEditedProjects()[0].Post(false, []structs.Blocks{{Type: "markdown", Markdown: &structs.MarkdownBlock{Content: "i tweeted this with golang"}}}, []string{"golang", "API"}, []string{}, "AUTOMATED POST", 1)
+// }

@@ -7,6 +7,8 @@ type JsonStruct interface {
 	LoggedIn |
 		ListEditedProjects |
 		ProjectPosts |
+		AttachStart |
+		PostIdStruct |
 		Filler
 }
 
@@ -71,14 +73,37 @@ type Blocks struct {
 }
 
 type AttachmentBlock struct {
-	FileURL      string `json:"fileURL"`
-	PreviewURL   string `json:"previewURL"`
+	FileURL      string `json:"fileURL,omitempty"`
+	PreviewURL   string `json:"previewURL,omitempty"`
 	AttachmentId string `json:"attachmentId"`
 	AltText      string `json:"altText"`
 }
 
 type MarkdownBlock struct {
 	Content string `json:"content"`
+}
+
+type AttachStart struct {
+	AttachmentId   string         `json:"attachmentId"`
+	Url            string         `json:"url"`
+	RequiredFields RequiredFields `json:"requiredFields"`
+}
+
+type RequiredFields struct {
+	Acl                string `json:"acl"`
+	ContentType        string `json:"Content-Type"`
+	ContentDisposition string `json:"Content-Disposition"`
+	CacheControl       string `json:"Cache-Control"`
+	Key                string `json:"key"`
+	Bucket             string `json:"bucket"`
+	XAmzAlgorithm      string `json:"X-Amz-Algorithm"`
+	XAmzCredential     string `json:"X-Amz-Credential"`
+	Policy             string `json:"Policy"`
+	XAmzSignature      string `json:"X-Amz-Signature"`
+}
+
+type PostIdStruct struct {
+	PostId int `json:"postId"`
 }
 
 type Filler struct{}

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"gohost/requests"
@@ -72,9 +73,18 @@ func (p Project) FrequentlyUsedTags() [][]byte {
 func (p Project) GetRawPosts(page int) structs.ProjectPosts {
 	r := structs.ProjectPosts{}
 
-	requests.Fetch("get", fmt.Sprintf("/project/%s/posts?page=%d", p.Handle(), page), p.u.cookie, nil, false, &r)
+	requests.Fetch("get", fmt.Sprintf("/project/%s/posts?page=%d", p.Handle(), page), p.u.cookie, nil, nil, false, &r)
 
 	return r
+}
+
+func (p Project) GetPosts(page int) []Post {
+	postsRaw := p.GetRawPosts(page)
+	posts := []Post{}
+	for _, post := range postsRaw.Items {
+		posts = append(posts, NewPost(p, post))
+	}
+	return posts
 }
 
 type postRequest struct {
@@ -86,11 +96,73 @@ type postRequest struct {
 	PostState       int              `json:"postState"`
 }
 
-func (p Project) Post(adult bool, blocks []structs.Blocks, tags, cws []string, headline string, postState int) {
+func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) Post {
+	markdownLen := len(markdown)
+	attachmentLen := len(attachments)
+
+	blocksLen := markdownLen + attachmentLen
+	blocks := make([]structs.Blocks, blocksLen)
+
+	for i := range attachments {
+		blocks[i] = attachments[i].GetBlock()
+	}
+	for i := range markdown {
+		blocks[i+attachmentLen] = markdown[i].GetBlock()
+	}
+
+	postState := 1
+	if draft || attachmentLen != 0 {
+		postState = 0
+	}
+
 	r := postRequest{adult, blocks, tags, cws, headline, postState}
 	reqBody, err := json.Marshal(r)
 	if err != nil {
 		log.Fatal(err)
 	}
-	requests.Fetch[structs.Filler]("post", fmt.Sprintf("/project/%s/posts", p.Handle()), p.u.cookie, reqBody, false, nil)
+
+	s := structs.PostIdStruct{}
+	requests.Fetch("POST",
+		fmt.Sprintf("/project/%s/posts", p.Handle()),
+		p.u.cookie, nil, bytes.NewReader(reqBody), false, &s)
+
+	if postState == 1 {
+		return p.GetPosts(0)[0]
+	}
+
+	// draft
+	if len(attachments) == 0 {
+		return Post{}
+	}
+
+	for i := range attachments {
+		(&attachments[i]).upload(s.PostId, p)
+	}
+
+	for i := range attachments {
+		blocks[i] = attachments[i].GetBlock()
+	}
+	for i := range markdown {
+		blocks[i+attachmentLen] = markdown[i].GetBlock()
+	}
+
+	if !draft {
+		postState = 1
+	}
+
+	r = postRequest{adult, blocks, tags, cws, headline, postState}
+	reqBody, err = json.Marshal(r)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	requests.Fetch[structs.Filler]("PUT",
+		fmt.Sprintf("/project/%s/posts/%d", p.Handle(), s.PostId),
+		p.u.cookie, nil, bytes.NewReader(reqBody), false, nil)
+
+	if postState == 1 {
+		return p.GetPosts(0)[0]
+	}
+
+	return Post{}
 }
