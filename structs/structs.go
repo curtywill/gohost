@@ -98,6 +98,7 @@ type RequiredFields struct {
 	Bucket             string `json:"bucket"`
 	XAmzAlgorithm      string `json:"X-Amz-Algorithm"`
 	XAmzCredential     string `json:"X-Amz-Credential"`
+	XAmzDate           string `json:"X-Amz-Date"`
 	Policy             string `json:"Policy"`
 	XAmzSignature      string `json:"X-Amz-Signature"`
 }

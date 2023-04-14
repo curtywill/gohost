@@ -101,11 +101,14 @@ func (a *Attachment) upload(postId int, project Project) {
 	}
 	req.Header.Set("Content-Type", contentTypeHeader)
 
-	_, err = client.Do(req)
+	res, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	if res.StatusCode != 204 {
+		log.Fatalf("bad status code from redcent dev: %d", res.StatusCode)
+	}
 	requests.Fetch[structs.Filler]("POST",
 		fmt.Sprintf("/project/%s/posts/%d/attach/finish/%s", project.Handle(), postId, r.AttachmentId),
 		project.u.cookie, nil, nil, false, nil)
@@ -117,9 +120,9 @@ func (a *Attachment) upload(postId int, project Project) {
 // helper functions for Upload
 func makeForm(filename, contentType, contentLength string) string {
 	formData := url.Values{}
-	formData.Set("filename", filename)
-	formData.Set("content_type", contentType)
 	formData.Set("content_length", contentLength)
+	formData.Set("content_type", contentType)
+	formData.Set("filename", filename)
 	encodedForm := formData.Encode()
 	return encodedForm
 }
@@ -137,6 +140,8 @@ func DOSpacesForm(r structs.RequiredFields, filename string, file *os.File) (str
 	writer.WriteField("bucket", r.Bucket)
 	writer.WriteField("X-Amz-Algorithm", r.XAmzAlgorithm)
 	writer.WriteField("X-Amz-Credential", r.XAmzCredential)
+	writer.WriteField("X-Amz-Date", r.XAmzDate)
+	writer.WriteField("Policy", r.Policy)
 	writer.WriteField("X-Amz-Signature", r.XAmzSignature)
 
 	h := make(textproto.MIMEHeader)

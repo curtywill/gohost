@@ -1,11 +1,10 @@
 package models
 
-// import (
-// 	"gohost/structs"
-// 	"testing"
-// )
+import (
+	"testing"
+)
 
-// var u User = LoginWithCookie("s%3AT2AjSKWV3yE3yPJEyNN2kNZFuzswEib-.zdF3uSoGZfvsSGMvYPZN%2Fo4ea5Efn6oV1zJXAzmBqUw")
+var u User = LoginWithCookie("s%3AorZ3lHts7fDPdw7cfKSkAnzBokgRzcPC.npGItUqkzNvgPgEj1UTdlGdo8QJc2fK%2FAOHwJ6KV2T8")
 
 // func TestUserInfo(t *testing.T) {
 // 	email := u.Email()
@@ -29,9 +28,17 @@ package models
 
 // func TestGetRawPosts(t *testing.T) {
 // 	projects := u.GetEditedProjects()
-// 	t.Log(projects[0].GetRawPosts(0))
+// 	t.Log(projects[1].GetRawPosts(0))
 // }
 
-// func TestPost(t *testing.T) {
-// 	u.GetEditedProjects()[0].Post(false, []structs.Blocks{{Type: "markdown", Markdown: &structs.MarkdownBlock{Content: "i tweeted this with golang"}}}, []string{"golang", "API"}, []string{}, "AUTOMATED POST", 1)
-// }
+func TestPost(t *testing.T) {
+	defaultProject := u.GetEditedProjects()[1]
+	markdown := []Markdown{NewMarkdown("hello my friends")}
+	attachments := []Attachment{NewAttachment("C:\\Users\\curty\\Documents\\ShareX\\Screenshots\\2023-03\\chrome_yIz40Aetir.png", "")}
+
+	post := defaultProject.Post(false, markdown, attachments,
+		[]string{"golang", "api", "software-development"}, []string{},
+		"AUTOMATED POST WITH ATTACHMENT", false)
+
+	t.Log(post.Info.Blocks[0].Attachment)
+}

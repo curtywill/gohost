@@ -88,6 +88,10 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, headers map
 		req, err := http.NewRequest(http.MethodPut, url, reader)
 		check(err)
 
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+
 		req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
 
 		res, err = client.Do(req)

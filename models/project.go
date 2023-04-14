@@ -121,10 +121,13 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 		log.Fatal(err)
 	}
 
+	jsonHeaders := map[string]string{
+		"Content-Type": "application/json; charset=utf-8",
+	}
 	s := structs.PostIdStruct{}
 	requests.Fetch("POST",
 		fmt.Sprintf("/project/%s/posts", p.Handle()),
-		p.u.cookie, nil, bytes.NewReader(reqBody), false, &s)
+		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false, &s)
 
 	if postState == 1 {
 		return p.GetPosts(0)[0]
@@ -142,9 +145,6 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 	for i := range attachments {
 		blocks[i] = attachments[i].GetBlock()
 	}
-	for i := range markdown {
-		blocks[i+attachmentLen] = markdown[i].GetBlock()
-	}
 
 	if !draft {
 		postState = 1
@@ -158,7 +158,7 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 
 	requests.Fetch[structs.Filler]("PUT",
 		fmt.Sprintf("/project/%s/posts/%d", p.Handle(), s.PostId),
-		p.u.cookie, nil, bytes.NewReader(reqBody), false, nil)
+		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false, nil)
 
 	if postState == 1 {
 		return p.GetPosts(0)[0]
