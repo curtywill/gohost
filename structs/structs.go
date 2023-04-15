@@ -3,15 +3,6 @@ package structs
 // structs used for JSON decoding!
 // named after the endpoint that the json stream is coming from
 
-type JsonStruct interface {
-	LoggedIn |
-		ListEditedProjects |
-		ProjectPosts |
-		AttachStart |
-		PostIdStruct |
-		Filler
-}
-
 type LoggedIn struct {
 	Activated bool   `json:"activated"`
 	ModMode   bool   `json:"modMode"`
@@ -105,6 +96,10 @@ type RequiredFields struct {
 
 type PostIdStruct struct {
 	PostId int `json:"postId"`
+}
+
+type SaltResponse struct {
+	Salt string `json:"salt"`
 }
 
 type Filler struct{}

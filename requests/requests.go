@@ -3,7 +3,6 @@ package requests
 import (
 	"encoding/json"
 	"fmt"
-	"gohost/structs"
 	"io"
 	"log"
 	"net/http"
@@ -36,8 +35,10 @@ func extractData(body []byte) json.RawMessage {
 	return data
 }
 
-func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, headers map[string]string, reader io.Reader, complex bool, responseStruct *ret) {
+func Fetch(method, endpoint, cookies string, headers map[string]string, body io.Reader, complex bool) ([]byte, http.Header) {
 	var res *http.Response
+	var data []byte
+
 	client := &http.Client{}
 	url := base_url + endpoint
 	method = strings.ToUpper(method)
@@ -46,11 +47,13 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, headers map
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		check(err)
 
-		req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
+		if cookies != "" {
+			req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
+		}
 		res, err = client.Do(req)
 		check(err)
 
-		data, err := io.ReadAll(res.Body)
+		data, err = io.ReadAll(res.Body)
 		check(err)
 
 		defer res.Body.Close()
@@ -59,33 +62,26 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, headers map
 			data = extractData(data)
 		}
 
-		err = json.Unmarshal(data, responseStruct)
-		check(err)
 		addToCache(cookies, endpoint, data)
 	} else if method == http.MethodPost {
-		req, err := http.NewRequest(http.MethodPost, url, reader)
+		req, err := http.NewRequest(http.MethodPost, url, body)
 		check(err)
 
 		for k, v := range headers {
 			req.Header.Set(k, v)
 		}
-
-		req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
-
+		if cookies != "" {
+			req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
+		}
 		res, err = client.Do(req)
 		check(err)
 
-		if responseStruct != nil {
-			data, err := io.ReadAll(res.Body)
-			check(err)
+		data, err = io.ReadAll(res.Body)
+		check(err)
 
-			defer res.Body.Close()
-
-			err = json.Unmarshal(data, responseStruct)
-			check(err)
-		}
+		defer res.Body.Close()
 	} else if method == http.MethodPut {
-		req, err := http.NewRequest(http.MethodPut, url, reader)
+		req, err := http.NewRequest(http.MethodPut, url, body)
 		check(err)
 
 		for k, v := range headers {
@@ -102,9 +98,15 @@ func Fetch[ret structs.JsonStruct](method, endpoint, cookies string, headers map
 	if res.StatusCode >= 400 {
 		log.Fatalf("bad request: %d", res.StatusCode)
 	}
+
+	if complex {
+		return data, res.Header
+	}
+
+	return data, nil
 }
 
-func FetchTrpc[ret structs.JsonStruct](methods any, cookie string, headers map[string]string, responseStruct *ret) {
+func FetchTrpc(methods any, cookie string, headers map[string]string) ([]byte, http.Header) {
 	switch m := methods.(type) {
 	case []string:
 		methods = strings.Join(m, ",")
@@ -116,9 +118,7 @@ func FetchTrpc[ret structs.JsonStruct](methods any, cookie string, headers map[s
 	methods = fmt.Sprintf("/trpc/%s", methods)
 	cachedData := getFromCache(cookie, methods.(string))
 	if cachedData == nil {
-		Fetch("get", methods.(string), cookie, headers, nil, false, responseStruct)
-	} else {
-		err := json.Unmarshal(cachedData, responseStruct)
-		check(err)
+		return Fetch("GET", methods.(string), cookie, headers, nil, false)
 	}
+	return cachedData, nil
 }

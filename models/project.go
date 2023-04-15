@@ -11,10 +11,10 @@ import (
 
 type Project struct {
 	Info structs.EditedProject
-	u    User
+	u    user
 }
 
-func NewProject(info structs.EditedProject, u User) Project {
+func NewProject(info structs.EditedProject, u user) Project {
 	return Project{info, u}
 }
 
@@ -73,7 +73,12 @@ func (p Project) FrequentlyUsedTags() [][]byte {
 func (p Project) GetRawPosts(page int) structs.ProjectPosts {
 	r := structs.ProjectPosts{}
 
-	requests.Fetch("get", fmt.Sprintf("/project/%s/posts?page=%d", p.Handle(), page), p.u.cookie, nil, nil, false, &r)
+	data, _ := requests.Fetch("get", fmt.Sprintf("/project/%s/posts?page=%d", p.Handle(), page), p.u.cookie, nil, nil, false)
+
+	err := json.Unmarshal(data, &r)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return r
 }
@@ -124,10 +129,16 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 	jsonHeaders := map[string]string{
 		"Content-Type": "application/json; charset=utf-8",
 	}
+
 	s := structs.PostIdStruct{}
-	requests.Fetch("POST",
+	data, _ := requests.Fetch("POST",
 		fmt.Sprintf("/project/%s/posts", p.Handle()),
-		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false, &s)
+		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false)
+
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if postState == 1 {
 		return p.GetPosts(0)[0]
@@ -156,9 +167,9 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 		log.Fatal(err)
 	}
 
-	requests.Fetch[structs.Filler]("PUT",
+	requests.Fetch("PUT",
 		fmt.Sprintf("/project/%s/posts/%d", p.Handle(), s.PostId),
-		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false, nil)
+		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false)
 
 	if postState == 1 {
 		return p.GetPosts(0)[0]

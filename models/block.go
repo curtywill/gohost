@@ -2,6 +2,7 @@ package models
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"gohost/requests"
 	"gohost/structs"
@@ -78,9 +79,14 @@ func (a *Attachment) upload(postId int, project Project) {
 		"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
 	}
 	r := structs.AttachStart{}
-	requests.Fetch("POST",
+	data, _ := requests.Fetch("POST",
 		fmt.Sprintf("/project/%s/posts/%d/attach/start", project.Handle(), postId),
-		project.u.cookie, formHeader, strings.NewReader(form), false, &r)
+		project.u.cookie, formHeader, strings.NewReader(form), false)
+
+	err := json.Unmarshal(data, &r)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	file, err := os.Open(a.filepath)
 	if err != nil {
@@ -88,7 +94,7 @@ func (a *Attachment) upload(postId int, project Project) {
 	}
 	defer file.Close()
 
-	contentTypeHeader, body, err := DOSpacesForm(r.RequiredFields, a.filename, file)
+	contentTypeHeader, body, err := doSpacesForm(r.RequiredFields, a.filename, file)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,11 +115,11 @@ func (a *Attachment) upload(postId int, project Project) {
 	if res.StatusCode != 204 {
 		log.Fatalf("bad status code from redcent dev: %d", res.StatusCode)
 	}
-	requests.Fetch[structs.Filler]("POST",
+	requests.Fetch("POST",
 		fmt.Sprintf("/project/%s/posts/%d/attach/finish/%s", project.Handle(), postId, r.AttachmentId),
-		project.u.cookie, nil, nil, false, nil)
+		project.u.cookie, nil, nil, false)
 
-	// files been attached, need to add attachment ID to attachment struct
+	// file's been attached, need to add attachment ID to attachment struct
 	a.block.AttachmentId = r.AttachmentId
 }
 
@@ -127,7 +133,7 @@ func makeForm(filename, contentType, contentLength string) string {
 	return encodedForm
 }
 
-func DOSpacesForm(r structs.RequiredFields, filename string, file *os.File) (string, *bytes.Buffer, error) {
+func doSpacesForm(r structs.RequiredFields, filename string, file *os.File) (string, *bytes.Buffer, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	defer writer.Close() // writes closing boundary line

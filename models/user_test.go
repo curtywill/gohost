@@ -1,10 +1,8 @@
 package models
 
-import (
-	"testing"
-)
+import "testing"
 
-var u User = LoginWithCookie("s%3AorZ3lHts7fDPdw7cfKSkAnzBokgRzcPC.npGItUqkzNvgPgEj1UTdlGdo8QJc2fK%2FAOHwJ6KV2T8")
+// var u user = LoginWithCookie("s%3AorZ3lHts7fDPdw7cfKSkAnzBokgRzcPC.npGItUqkzNvgPgEj1UTdlGdo8QJc2fK%2FAOHwJ6KV2T8")
 
 // func TestUserInfo(t *testing.T) {
 // 	email := u.Email()
@@ -31,14 +29,22 @@ var u User = LoginWithCookie("s%3AorZ3lHts7fDPdw7cfKSkAnzBokgRzcPC.npGItUqkzNvgP
 // 	t.Log(projects[1].GetRawPosts(0))
 // }
 
-func TestPost(t *testing.T) {
-	defaultProject := u.GetEditedProjects()[1]
-	markdown := []Markdown{NewMarkdown("hello my friends")}
-	attachments := []Attachment{NewAttachment("C:\\Users\\curty\\Documents\\ShareX\\Screenshots\\2023-03\\chrome_yIz40Aetir.png", "")}
+// func TestPost(t *testing.T) {
+// 	defaultProject := u.GetEditedProjects()[1]
 
-	post := defaultProject.Post(false, markdown, attachments,
-		[]string{"golang", "api", "software-development"}, []string{},
-		"AUTOMATED POST WITH ATTACHMENT", false)
+// 	attachments := make([]Attachment, 4)
 
-	t.Log(post.Info.Blocks[0].Attachment)
+// 	attachments[0] = NewAttachment("C:\\Users\\curty\\Documents\\ShareX\\Screenshots\\2023-03\\chrome_5cAlEfQ29S.png", "tsurgi serving")
+// 	attachments[1] = NewAttachment("C:\\Users\\curty\\Documents\\ShareX\\Screenshots\\2023-03\\chrome_pv179u36J4.png", "rare joshu serve")
+// 	attachments[2] = NewAttachment("C:\\Users\\curty\\Documents\\ShareX\\Screenshots\\2023-03\\chrome_VR12RGfp7E.png", "bae")
+// 	attachments[3] = NewAttachment("C:\\Users\\curty\\Documents\\ShareX\\Screenshots\\2023-03\\chrome_vdhusFhtVA.png", "angels")
+
+// 	defaultProject.Post(false, nil, attachments,
+// 		[]string{"golang", "api", "software-development"}, []string{},
+// 		"jojo dump", false)
+// }
+
+func TestLoginWithPass(t *testing.T) {
+	u := LoginWithPass("username", "pass")
+	t.Log(u.Email())
 }
