@@ -45,6 +45,13 @@ import "testing"
 // }
 
 func TestLoginWithPass(t *testing.T) {
-	u := LoginWithPass("username", "pass")
-	t.Log(u.Email())
+	u := LoginWithPass("email", "password")
+	project := u.GetProject("curtypage")
+	post := project.GetPosts(0)[2]
+
+	markdown, attachments := post.Blocks()
+	attachments = append(attachments, NewAttachment("C:\\Users\\curty\\Documents\\ShareX\\Screenshots\\2023-02\\chrome_hcLD39Nquc.png", "i added this in post"))
+	editedPost := project.EditPost(post.Id(), false, markdown, attachments,
+		[]string{"golang", "api", "software development"}, []string{}, post.Headline(), false)
+	t.Log(editedPost)
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"gohost/requests"
-	"gohost/structs"
 	"io"
 	"log"
 	"mime"
@@ -18,23 +17,23 @@ import (
 )
 
 type Markdown struct {
-	block structs.MarkdownBlock
+	block markdownBlockResponse
 }
 
 func NewMarkdown(content string) Markdown {
-	block := structs.MarkdownBlock{Content: content}
+	block := markdownBlockResponse{Content: content}
 	return Markdown{block}
 }
 
-func (m Markdown) GetBlock() structs.Blocks {
-	return structs.Blocks{
+func (m Markdown) getBlock() blocksResponse {
+	return blocksResponse{
 		Type:     "markdown",
 		Markdown: &m.block,
 	}
 }
 
 type Attachment struct {
-	block         structs.AttachmentBlock
+	block         attachmentBlockResponse
 	filepath      string
 	filename      string
 	contentType   string
@@ -57,28 +56,33 @@ func NewAttachment(filepath, altText string) Attachment {
 	contentType := mime.TypeByExtension("." + strings.ToLower(sl[len(sl)-1]))
 	contentLength := fmt.Sprint(stat.Size())
 
-	block := structs.AttachmentBlock{
-		AttachmentId: "00000000-0000-0000-0000-000000000000",
-		AltText:      altText,
+	block := attachmentBlockResponse{
+		AltText: altText,
 	}
 
 	return Attachment{block, filepath, filename, contentType, contentLength}
 }
 
-func (a Attachment) GetBlock() structs.Blocks {
-	return structs.Blocks{
+func (a Attachment) getBlock() blocksResponse {
+	if a.block.AttachmentId == "" {
+		a.block.AttachmentId = "00000000-0000-0000-0000-000000000000"
+	}
+	return blocksResponse{
 		Type:       "attachment",
 		Attachment: &a.block,
 	}
 }
 
 func (a *Attachment) upload(postId int, project Project) {
+	if a.block.AttachmentId != "" {
+		return
+	}
 	form := makeForm(a.filename, a.contentType, a.contentLength)
 
 	formHeader := map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
 	}
-	r := structs.AttachStart{}
+	r := attachStartResponse{}
 	data, _ := requests.Fetch("POST",
 		fmt.Sprintf("/project/%s/posts/%d/attach/start", project.Handle(), postId),
 		project.u.cookie, formHeader, strings.NewReader(form), false)
@@ -124,6 +128,8 @@ func (a *Attachment) upload(postId int, project Project) {
 }
 
 // helper functions for Upload
+
+// creates the url encoded form that starts the attachment process
 func makeForm(filename, contentType, contentLength string) string {
 	formData := url.Values{}
 	formData.Set("content_length", contentLength)
@@ -133,7 +139,8 @@ func makeForm(filename, contentType, contentLength string) string {
 	return encodedForm
 }
 
-func doSpacesForm(r structs.RequiredFields, filename string, file *os.File) (string, *bytes.Buffer, error) {
+// creates the multipart form needed for the digital ocean spaces credentials
+func doSpacesForm(r requiredFieldsResponse, filename string, file *os.File) (string, *bytes.Buffer, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	defer writer.Close() // writes closing boundary line

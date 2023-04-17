@@ -5,34 +5,30 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/url"
-
-	//"fmt"
 	"gohost/requests"
-	"gohost/structs"
 	"log"
+	"net/url"
 	"strings"
 
 	"golang.org/x/crypto/pbkdf2"
-	//"log"
 )
 
-type user struct {
+type User struct {
 	cookie string
 }
 
-func LoginWithCookie(cookie string) user {
-	u := user{cookie}
+func LoginWithCookie(cookie string) User {
+	u := User{cookie}
 	// if userInfo doesn't fail, we've successfully logged in
 	u.userInfo()
 	return u
 }
 
-func LoginWithPass(email, password string) user {
+func LoginWithPass(email, password string) User {
 	// i know nothing of cryptography so shoutout to @valknight (for code samples) and @iliana (for algorithm)
 	// https://cohost.org/iliana/post/180187-eggbug-rs-v0-1-3-d
 
-	r := structs.SaltResponse{}
+	r := saltResponse{}
 	data, _ := requests.Fetch("GET", fmt.Sprintf("/login/salt?email=%s", email), "", nil, nil, false)
 
 	err := json.Unmarshal(data, &r)
@@ -64,14 +60,14 @@ func LoginWithPass(email, password string) user {
 	cookie := header.Get("set-cookie")
 
 	s := strings.Split(cookie, "=")[1]
-	u := user{strings.Split(s, ";")[0]}
+	u := User{strings.Split(s, ";")[0]}
 	u.userInfo()
 
 	return u
 }
 
-func (u user) userInfo() structs.LoggedIn {
-	r := structs.LoggedIn{}
+func (u User) userInfo() loggedInResponse {
+	r := loggedInResponse{}
 	data, _ := requests.FetchTrpc("login.loggedIn", u.cookie, nil)
 
 	err := json.Unmarshal(data, &r)
@@ -81,36 +77,49 @@ func (u user) userInfo() structs.LoggedIn {
 	return r
 }
 
-func (u user) Id() int {
+func (u User) Id() int {
 	return u.userInfo().UserId
 }
 
-func (u user) Email() string {
+func (u User) Email() string {
 	return u.userInfo().Email
 }
 
-func (u user) ProjectId() int {
+func (u User) ProjectId() int {
 	return u.userInfo().ProjectId
 }
 
-func (u user) ModMode() bool {
+func (u User) ModMode() bool {
 	return u.userInfo().ModMode
 }
 
-func (u user) ReadOnly() bool {
+func (u User) ReadOnly() bool {
 	return u.userInfo().ReadOnly
 }
 
-func (u user) Activated() bool {
+func (u User) Activated() bool {
 	return u.userInfo().Activated
 }
 
-// func (u User) DefaultProject() Project {
-// 	return NewProject()
-// }
+func (u User) DefaultProject() Project {
+	projects := u.getRawEditedProjects()
+	defaultProject := projects.Projects[0]
+	return Project{defaultProject, u}
+}
 
-func (u user) GetRawEditedProjects() structs.ListEditedProjects {
-	r := structs.ListEditedProjects{}
+// retrieve one of your projects by its handle
+func (u User) GetProject(handle string) Project {
+	projects := u.getRawEditedProjects()
+	for _, project := range projects.Projects {
+		if project.Handle == handle {
+			return Project{project, u}
+		}
+	}
+	return Project{}
+}
+
+func (u User) getRawEditedProjects() listEditedProjectsResponse {
+	r := listEditedProjectsResponse{}
 	data, _ := requests.FetchTrpc("projects.listEditedProjects", u.cookie, nil)
 
 	err := json.Unmarshal(data, &r)
@@ -120,11 +129,12 @@ func (u user) GetRawEditedProjects() structs.ListEditedProjects {
 	return r
 }
 
-func (u user) GetEditedProjects() []Project {
-	projectsRaw := u.GetRawEditedProjects()
+// lists all the projects for an authenticated user
+func (u User) GetEditedProjects() []Project {
+	projectsRaw := u.getRawEditedProjects()
 	projects := []Project{}
 	for _, project := range projectsRaw.Projects {
-		projects = append(projects, NewProject(project, u))
+		projects = append(projects, Project{project, u})
 	}
 
 	return projects
