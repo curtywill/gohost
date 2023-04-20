@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"gohost/requests"
-	"log"
 )
 
 type Project struct {
@@ -65,26 +64,28 @@ func (p Project) FrequentlyUsedTags() []string {
 	return p.info.FrequentlyUsedTags
 }
 
-func (p Project) GetRawPosts(page int) projectPostsResponse {
+func (p Project) GetRawPosts(page int) (projectPostsResponse, error) {
 	r := projectPostsResponse{}
 
-	data, _ := requests.Fetch("get", fmt.Sprintf("/project/%s/posts?page=%d", p.Handle(), page), p.u.cookie, nil, nil, false)
-
-	err := json.Unmarshal(data, &r)
+	data, _, err := requests.Fetch(p.u.client, "get", fmt.Sprintf("/project/%s/posts?page=%d", p.Handle(), page), p.u.cookie, nil, nil, false)
 	if err != nil {
-		log.Fatal(err)
+		return r, err
 	}
+	json.Unmarshal(data, &r)
 
-	return r
+	return r, nil
 }
 
-func (p Project) GetPosts(page int) []Post {
-	postsRaw := p.GetRawPosts(page)
+func (p Project) GetPosts(page int) ([]Post, error) {
+	postsRaw, err := p.GetRawPosts(page)
+	if err != nil {
+		return nil, err
+	}
 	posts := []Post{}
 	for _, post := range postsRaw.Items {
 		posts = append(posts, Post{p, post})
 	}
-	return posts
+	return posts, nil
 }
 
 type postRequest struct {
@@ -96,7 +97,7 @@ type postRequest struct {
 	PostState       int              `json:"postState"`
 }
 
-func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) Post {
+func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) (Post, error) {
 	markdownLen := len(markdown)
 	attachmentLen := len(attachments)
 
@@ -116,39 +117,39 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 	}
 
 	r := postRequest{adult, blocks, tags, cws, headline, postState}
-	reqBody, err := json.Marshal(r)
-	if err != nil {
-		log.Fatal(err)
-	}
+	reqBody, _ := json.Marshal(r)
 
 	jsonHeaders := map[string]string{
 		"Content-Type": "application/json; charset=utf-8",
 	}
 
 	s := postIdResponse{}
-	data, _ := requests.Fetch("POST",
+	data, _, err := requests.Fetch(p.u.client, "POST",
 		fmt.Sprintf("/project/%s/posts", p.Handle()),
 		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false)
-
-	err = json.Unmarshal(data, &s)
 	if err != nil {
-		log.Fatal(err)
+		return Post{}, nil
 	}
+	json.Unmarshal(data, &s)
 
 	// go ahead and post if it's not a draft and has no attachments
 	if postState == 1 {
-		return p.GetPosts(0)[0]
+		posts, err := p.GetPosts(0)
+		return posts[0], err
 	}
 
 	// draft
 	// TODO: implement drafts
 	if len(attachments) == 0 {
-		return Post{}
+		return Post{}, fmt.Errorf("haven't added support for drafts yet")
 	}
 
 	for i := range attachments {
-		(&attachments[i]).upload(s.PostId, p)
+		err = (&attachments[i]).upload(p.u.client, s.PostId, p)
 		blocks[i] = attachments[i].getBlock()
+	}
+	if err != nil {
+		return Post{}, err
 	}
 
 	if !draft {
@@ -156,23 +157,21 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 	}
 
 	r = postRequest{adult, blocks, tags, cws, headline, postState}
-	reqBody, err = json.Marshal(r)
-	if err != nil {
-		log.Fatal(err)
-	}
+	reqBody, _ = json.Marshal(r)
 
-	requests.Fetch("PUT",
+	requests.Fetch(p.u.client, "PUT",
 		fmt.Sprintf("/project/%s/posts/%d", p.Handle(), s.PostId),
 		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false)
 
 	if postState == 1 {
-		return p.GetPosts(0)[0]
+		posts, err := p.GetPosts(0)
+		return posts[0], err
 	}
 
-	return Post{}
+	return Post{}, fmt.Errorf("haven't added support for drafts yet")
 }
 
-func (p Project) EditPost(postId int, adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) Post {
+func (p Project) EditPost(postId int, adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) (Post, error) {
 	markdownLen := len(markdown)
 	attachmentLen := len(attachments)
 
@@ -192,33 +191,36 @@ func (p Project) EditPost(postId int, adult bool, markdown []Markdown, attachmen
 	}
 
 	r := postRequest{adult, blocks, tags, cws, headline, postState}
-	reqBody, err := json.Marshal(r)
-	if err != nil {
-		log.Fatal(err)
-	}
+	reqBody, _ := json.Marshal(r)
 
 	jsonHeaders := map[string]string{
 		"Content-Type": "application/json; charset=utf-8",
 	}
 
-	requests.Fetch("PUT",
+	_, _, err := requests.Fetch(p.u.client, "PUT",
 		fmt.Sprintf("/project/%s/posts/%d", p.Handle(), postId),
 		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false)
-
+	if err != nil {
+		return Post{}, nil
+	}
 	// go ahead and post if it's not a draft and has no attachments
 	if postState == 1 {
-		return p.GetPosts(0)[0]
+		posts, err := p.GetPosts(0)
+		return posts[0], err
 	}
 
 	// draft
 	// TODO: implement drafts
 	if len(attachments) == 0 {
-		return Post{}
+		return Post{}, fmt.Errorf("haven't added support for drafts yet")
 	}
 
 	for i := range attachments {
-		(&attachments[i]).upload(postId, p)
+		err = (&attachments[i]).upload(p.u.client, postId, p)
 		blocks[i] = attachments[i].getBlock()
+	}
+	if err != nil {
+		return Post{}, err
 	}
 
 	if !draft {
@@ -226,18 +228,18 @@ func (p Project) EditPost(postId int, adult bool, markdown []Markdown, attachmen
 	}
 
 	r = postRequest{adult, blocks, tags, cws, headline, postState}
-	reqBody, err = json.Marshal(r)
-	if err != nil {
-		log.Fatal(err)
-	}
+	reqBody, _ = json.Marshal(r)
 
-	requests.Fetch("PUT",
+	_, _, err = requests.Fetch(p.u.client, "PUT",
 		fmt.Sprintf("/project/%s/posts/%d", p.Handle(), postId),
 		p.u.cookie, jsonHeaders, bytes.NewReader(reqBody), false)
-
+	if err != nil {
+		return Post{}, nil
+	}
 	if postState == 1 {
-		return p.GetPosts(0)[0]
+		posts, err := p.GetPosts(0)
+		return posts[0], err
 	}
 
-	return Post{}
+	return Post{}, fmt.Errorf("haven't added support for drafts yet")
 }

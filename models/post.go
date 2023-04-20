@@ -17,7 +17,7 @@ func (p Post) Headline() string {
 }
 
 func (p Post) PublishedAt() time.Time {
-	t, _ := time.Parse(time.RFC3339, p.info.Headline)
+	t, _ := time.Parse(time.RFC3339, p.info.PublishedAt)
 	return t
 }
 

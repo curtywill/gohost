@@ -1,7 +1,6 @@
 package requests
 
 import (
-	"log"
 	"time"
 )
 
@@ -30,9 +29,7 @@ func getFromCache(cookie, endpoint string) []byte {
 	}
 	t := time.Now()
 	if t.Sub(cachedData.timeout).Seconds() > 30 {
-		log.Print("timed out")
 		return nil
 	}
-	log.Print("found data in cache!")
 	return cachedData.data
 }

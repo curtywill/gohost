@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"gohost/requests"
 	"io"
-	"log"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -40,16 +39,16 @@ type Attachment struct {
 	contentLength string
 }
 
-func NewAttachment(filepath, altText string) Attachment {
+func NewAttachment(filepath, altText string) (Attachment, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
-		log.Fatal(err)
+		return Attachment{}, err
 	}
 	defer file.Close()
 
 	stat, err := os.Stat(filepath)
 	if err != nil {
-		log.Fatal(err)
+		return Attachment{}, err
 	}
 	filename := stat.Name()
 	sl := strings.Split(filename, ".")
@@ -60,7 +59,7 @@ func NewAttachment(filepath, altText string) Attachment {
 		AltText: altText,
 	}
 
-	return Attachment{block, filepath, filename, contentType, contentLength}
+	return Attachment{block, filepath, filename, contentType, contentLength}, nil
 }
 
 func (a Attachment) getBlock() blocksResponse {
@@ -73,58 +72,66 @@ func (a Attachment) getBlock() blocksResponse {
 	}
 }
 
-func (a *Attachment) upload(postId int, project Project) {
+func (a *Attachment) upload(client *http.Client, postId int, project Project) error {
 	if a.block.AttachmentId != "" {
-		return
+		return nil
 	}
+
 	form := makeForm(a.filename, a.contentType, a.contentLength)
 
 	formHeader := map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
 	}
+
 	r := attachStartResponse{}
-	data, _ := requests.Fetch("POST",
+	data, _, err := requests.Fetch(client, "POST",
 		fmt.Sprintf("/project/%s/posts/%d/attach/start", project.Handle(), postId),
 		project.u.cookie, formHeader, strings.NewReader(form), false)
 
-	err := json.Unmarshal(data, &r)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	json.Unmarshal(data, &r)
 
 	file, err := os.Open(a.filepath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer file.Close()
 
 	contentTypeHeader, body, err := doSpacesForm(r.RequiredFields, a.filename, file)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-
-	client := &http.Client{}
 
 	req, err := http.NewRequest(http.MethodPost, r.Url, body)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
 	req.Header.Set("Content-Type", contentTypeHeader)
 
 	res, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if res.StatusCode != 204 {
-		log.Fatalf("bad status code from redcent dev: %d", res.StatusCode)
+		return fmt.Errorf("error uploading attachment to digital ocean! status code: %d", res.StatusCode)
 	}
-	requests.Fetch("POST",
+
+	_, _, err = requests.Fetch(client, "POST",
 		fmt.Sprintf("/project/%s/posts/%d/attach/finish/%s", project.Handle(), postId, r.AttachmentId),
 		project.u.cookie, nil, nil, false)
 
+	if err != nil {
+		return err
+	}
 	// file's been attached, need to add attachment ID to attachment struct
 	a.block.AttachmentId = r.AttachmentId
+
+	return nil
 }
 
 // helper functions for Upload
@@ -159,7 +166,7 @@ func doSpacesForm(r requiredFieldsResponse, filename string, file *os.File) (str
 
 	h := make(textproto.MIMEHeader)
 	h.Set("Content-Disposition",
-		fmt.Sprintf(`form-data; name="file"; filename="%s"`, filename)) // TODO: escape filename
+		fmt.Sprintf(`form-data; name="file"; filename="%s"`, escapeQuotes(filename)))
 	h.Set("Content-Type", r.ContentType)
 	p, err := writer.CreatePart(h)
 	if err != nil {
@@ -171,4 +178,12 @@ func doSpacesForm(r requiredFieldsResponse, filename string, file *os.File) (str
 	}
 
 	return writer.FormDataContentType(), body, nil
+}
+
+// helpers for the multipart form
+// taken from go source
+var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
+func escapeQuotes(s string) string {
+	return quoteEscaper.Replace(s)
 }
