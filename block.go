@@ -1,5 +1,7 @@
 package gohost
 
+// Cohost posts are comprised of blocks, this file contains the
+// structs that symbolize said blocks
 import (
 	"bytes"
 	"encoding/json"
@@ -19,7 +21,8 @@ type Markdown struct {
 	block markdownBlockResponse
 }
 
-func NewMarkdown(content string) Markdown {
+// Returns a markdown block that represent text data on a Cohost post
+func MarkdownBlock(content string) Markdown {
 	block := markdownBlockResponse{Content: content}
 	return Markdown{block}
 }
@@ -39,7 +42,9 @@ type Attachment struct {
 	contentLength string
 }
 
-func NewAttachment(filepath, altText string) (Attachment, error) {
+// Returns an Attachment struct that contains information about an image given a filepath.
+// Can return a path error.
+func AttachmentBlock(filepath, altText string) (Attachment, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		return Attachment{}, err

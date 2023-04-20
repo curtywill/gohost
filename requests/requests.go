@@ -25,7 +25,7 @@ func extractData(body []byte) json.RawMessage {
 	return data
 }
 
-func Fetch(client *http.Client, method, endpoint, cookies string, headers map[string]string, body io.Reader, complex bool) ([]byte, http.Header, error) {
+func Fetch(client *http.Client, method, endpoint, cookie string, headers map[string]string, body io.Reader, complex bool) ([]byte, http.Header, error) {
 	var res *http.Response
 	var data []byte
 
@@ -38,9 +38,10 @@ func Fetch(client *http.Client, method, endpoint, cookies string, headers map[st
 			return nil, nil, err
 		}
 
-		if cookies != "" {
-			req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
+		if cookie != "" {
+			req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookie})
 		}
+
 		res, err = client.Do(req)
 		if err != nil {
 			return nil, nil, err
@@ -57,7 +58,7 @@ func Fetch(client *http.Client, method, endpoint, cookies string, headers map[st
 			data = extractData(data)
 		}
 
-		addToCache(cookies, endpoint, data)
+		addToCache(cookie, endpoint, data)
 	} else if method == http.MethodPost {
 		req, err := http.NewRequest(http.MethodPost, url, body)
 		if err != nil {
@@ -67,9 +68,11 @@ func Fetch(client *http.Client, method, endpoint, cookies string, headers map[st
 		for k, v := range headers {
 			req.Header.Set(k, v)
 		}
-		if cookies != "" {
-			req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
+
+		if cookie != "" {
+			req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookie})
 		}
+
 		res, err = client.Do(req)
 		if err != nil {
 			return nil, nil, err
@@ -91,13 +94,12 @@ func Fetch(client *http.Client, method, endpoint, cookies string, headers map[st
 			req.Header.Set(k, v)
 		}
 
-		req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookies})
+		req.AddCookie(&http.Cookie{Name: "connect.sid", Value: cookie})
 
 		res, err = client.Do(req)
 		if err != nil {
 			return nil, nil, err
 		}
-
 	}
 
 	if res.StatusCode >= 400 {
@@ -111,19 +113,11 @@ func Fetch(client *http.Client, method, endpoint, cookies string, headers map[st
 	return data, nil, nil
 }
 
-func FetchTrpc(client *http.Client, methods any, cookie string, headers map[string]string) ([]byte, http.Header, error) {
-	switch m := methods.(type) {
-	case []string:
-		methods = strings.Join(m, ",")
-	case string:
-		break
-	default:
-		return nil, nil, fmt.Errorf("%v is an invalid http method!", m)
-	}
+func FetchTrpc(client *http.Client, methods string, cookie string, headers map[string]string) ([]byte, http.Header, error) {
 	methods = fmt.Sprintf("/trpc/%s", methods)
-	cachedData := getFromCache(cookie, methods.(string))
+	cachedData := getFromCache(cookie, methods)
 	if cachedData == nil {
-		return Fetch(client, "GET", methods.(string), cookie, headers, nil, false)
+		return Fetch(client, "GET", methods, cookie, headers, nil, false)
 	}
 	return cachedData, nil, nil
 }

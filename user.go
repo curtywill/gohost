@@ -79,7 +79,6 @@ func LoginWithPass(client *http.Client, email, password string) (User, error) {
 
 func (u User) userInfo() (loggedInResponse, error) {
 	r := loggedInResponse{}
-	// gonna ignore the error because itd be a pain in the ass due to how userInfo() works
 	data, _, err := requests.FetchTrpc(u.client, "login.loggedIn", u.cookie, nil)
 	if err != nil {
 		return r, err
@@ -89,8 +88,8 @@ func (u User) userInfo() (loggedInResponse, error) {
 	return r, nil
 }
 
-// gonna ignore the userInfo() errors for the getters, for simplification
 func (u User) Id() int {
+	// Gonna ignore the userInfo() errors for the getters, for simplification
 	info, _ := u.userInfo()
 	return info.ProjectId
 }
@@ -120,6 +119,7 @@ func (u User) Activated() bool {
 	return info.Activated
 }
 
+// Returns your first project.
 func (u User) DefaultProject() (Project, error) {
 	projects, err := u.getRawEditedProjects()
 	if err != nil {
@@ -129,7 +129,7 @@ func (u User) DefaultProject() (Project, error) {
 	return Project{defaultProject, u}, nil
 }
 
-// retrieve one of your projects by its handle
+// Retrieve one of your projects by its handle
 func (u User) GetProject(handle string) (Project, error) {
 	projects, err := u.getRawEditedProjects()
 	if err != nil {
@@ -154,7 +154,7 @@ func (u User) getRawEditedProjects() (listEditedProjectsResponse, error) {
 	return r, nil
 }
 
-// lists all the projects for an authenticated user
+// Lists all the projects for an authenticated user
 func (u User) GetEditedProjects() ([]Project, error) {
 	projectsRaw, err := u.getRawEditedProjects()
 	if err != nil {

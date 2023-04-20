@@ -64,7 +64,7 @@ func (p Project) FrequentlyUsedTags() []string {
 	return p.info.FrequentlyUsedTags
 }
 
-func (p Project) GetRawPosts(page int) (projectPostsResponse, error) {
+func (p Project) getRawPosts(page int) (projectPostsResponse, error) {
 	r := projectPostsResponse{}
 
 	data, _, err := requests.Fetch(p.u.client, "get", fmt.Sprintf("/project/%s/posts?page=%d", p.Handle(), page), p.u.cookie, nil, nil, false)
@@ -76,8 +76,9 @@ func (p Project) GetRawPosts(page int) (projectPostsResponse, error) {
 	return r, nil
 }
 
+// Returns all the posts on a given page of the current project.
 func (p Project) GetPosts(page int) ([]Post, error) {
-	postsRaw, err := p.GetRawPosts(page)
+	postsRaw, err := p.getRawPosts(page)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,13 @@ type postRequest struct {
 	PostState       int              `json:"postState"`
 }
 
+// Makes a post on your current project
+// Returns a Post struct that contains info about the post, including the postId needed for editing!
+// Returns an empty Post in the case of a draft or an error
 func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) (Post, error) {
+	if markdown == nil || attachments == nil || cws == nil || tags == nil {
+		return Post{}, fmt.Errorf("do not pass nil slices to project.Post")
+	}
 	markdownLen := len(markdown)
 	attachmentLen := len(attachments)
 
@@ -172,6 +179,9 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 }
 
 func (p Project) EditPost(postId int, adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) (Post, error) {
+	if markdown == nil || attachments == nil || cws == nil || tags == nil {
+		return Post{}, fmt.Errorf("do not pass nil slices to project.EditPost")
+	}
 	markdownLen := len(markdown)
 	attachmentLen := len(attachments)
 
