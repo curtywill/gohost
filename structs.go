@@ -1,4 +1,4 @@
-package models
+package gohost
 
 // structs used for JSON decoding!
 // named after the endpoint that the json stream is coming from
