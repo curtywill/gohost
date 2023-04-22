@@ -103,7 +103,7 @@ func Fetch(client *http.Client, method, endpoint, cookie string, headers map[str
 	}
 
 	if res.StatusCode >= 400 {
-		return nil, nil, fmt.Errorf("bad request in call to fetch: %d", res.StatusCode)
+		return nil, nil, fmt.Errorf("bad request to endpoint %s: %d", endpoint, res.StatusCode)
 	}
 
 	if complex {

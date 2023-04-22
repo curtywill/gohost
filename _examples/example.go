@@ -24,14 +24,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//attachment, err := gohost.AttachmentBlock("eggbug.jpg", "goated mascot")
+	attachment, err := gohost.AttachmentBlock("eggbug.jpg", "goated mascot")
 	if err != nil {
 		log.Fatal(err)
 	}
-	//attachments := []gohost.Attachment{}
+	attachments := []gohost.Attachment{attachment}
 	markdown := []gohost.Markdown{gohost.MarkdownBlock("my first gohost post!")}
 
-	post, err := project.Post(false, markdown, nil, []string{"golang", "API", "gohost"}, nil, "cohost is awesome", false)
+	post, err := project.Post(false, markdown, attachments, []string{"golang", "API", "gohost"}, nil, "cohost is awesome", false)
 	if err != nil {
 		log.Fatal(err)
 	}

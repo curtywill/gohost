@@ -6,12 +6,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
-	"net/url"
 	"os"
 	"strings"
 
@@ -40,7 +43,9 @@ type Attachment struct {
 	filepath      string
 	filename      string
 	contentType   string
-	contentLength string
+	contentLength int64
+	height        int
+	width         int
 }
 
 // Returns an Attachment struct that contains information about an image given a filepath.
@@ -59,13 +64,18 @@ func AttachmentBlock(filepath, altText string) (Attachment, error) {
 	filename := stat.Name()
 	sl := strings.Split(filename, ".")
 	contentType := mime.TypeByExtension("." + strings.ToLower(sl[len(sl)-1]))
-	contentLength := fmt.Sprint(stat.Size())
+	contentLength := stat.Size()
+
+	img, _, err := image.DecodeConfig(file)
+	if err != nil {
+		return Attachment{}, err
+	}
 
 	block := attachmentBlockResponse{
 		AltText: altText,
 	}
 
-	return Attachment{block, filepath, filename, contentType, contentLength}, nil
+	return Attachment{block, filepath, filename, contentType, contentLength, img.Height, img.Width}, nil
 }
 
 func (a Attachment) getBlock() blocksResponse {
@@ -83,21 +93,20 @@ func (a *Attachment) upload(client *http.Client, postId int, project Project) er
 		return nil
 	}
 
-	form := makeForm(a.filename, a.contentType, a.contentLength)
+	form := makeForm(a.filename, a.contentType, a.contentLength, a.height, a.width)
 
 	formHeader := map[string]string{
-		"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+		"Content-Type": "application/json; charset=UTF-8",
 	}
 
 	r := attachStartResponse{}
 	data, _, err := requests.Fetch(client, "POST",
 		fmt.Sprintf("/project/%s/posts/%d/attach/start", project.Handle(), postId),
-		project.u.cookie, formHeader, strings.NewReader(form), false)
+		project.u.cookie, formHeader, bytes.NewReader(form), false)
 
 	if err != nil {
 		return err
 	}
-
 	json.Unmarshal(data, &r)
 
 	file, err := os.Open(a.filepath)
@@ -143,13 +152,18 @@ func (a *Attachment) upload(client *http.Client, postId int, project Project) er
 // helper functions for Upload
 
 // creates the url encoded form that starts the attachment process
-func makeForm(filename, contentType, contentLength string) string {
-	formData := url.Values{}
-	formData.Set("content_length", contentLength)
-	formData.Set("content_type", contentType)
-	formData.Set("filename", filename)
-	encodedForm := formData.Encode()
-	return encodedForm
+func makeForm(filename, contentType string, contentLength int64, height, width int) []byte {
+	type form struct {
+		Filename      string `json:"filename"`
+		ContentType   string `json:"content_type"`
+		ContentLength int64  `json:"content_length"`
+		Height        int    `json:"height"`
+		Width         int    `json:"width"`
+	}
+	f := form{filename, contentType, contentLength, height, width}
+	marshalledForm, _ := json.Marshal(f)
+
+	return marshalledForm
 }
 
 // creates the multipart form needed for the digital ocean spaces credentials
