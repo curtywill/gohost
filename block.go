@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"gohost/requests"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -15,6 +14,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/curtywill/gohost/requests"
 )
 
 type Markdown struct {

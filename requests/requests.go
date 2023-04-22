@@ -113,7 +113,7 @@ func Fetch(client *http.Client, method, endpoint, cookie string, headers map[str
 	return data, nil, nil
 }
 
-func FetchTrpc(client *http.Client, methods string, cookie string, headers map[string]string) ([]byte, http.Header, error) {
+func FetchTrpc(client *http.Client, methods, cookie string, headers map[string]string) ([]byte, http.Header, error) {
 	methods = fmt.Sprintf("/trpc/%s", methods)
 	cachedData := getFromCache(cookie, methods)
 	if cachedData == nil {

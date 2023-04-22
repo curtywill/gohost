@@ -5,10 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"gohost/requests"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/curtywill/gohost/requests"
 
 	"golang.org/x/crypto/pbkdf2"
 )

@@ -1,4 +1,4 @@
-module gohost
+module github.com/curtywill/gohost
 
 go 1.20
 
