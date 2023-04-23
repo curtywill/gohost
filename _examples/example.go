@@ -31,9 +31,23 @@ func main() {
 	attachments := []gohost.Attachment{attachment}
 	markdown := []gohost.Markdown{gohost.MarkdownBlock("my first gohost post!")}
 
-	post, err := project.Post(false, markdown, attachments, []string{"golang", "API", "gohost"}, nil, "cohost is awesome", false)
+	tags := []string{"golang", "API", "gohost"}
+	headline := "cohost is awesome"
+	post, err := project.Post(false, markdown, attachments, tags, nil, headline, false)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(post.Id())
+
+	attachment, err = gohost.AttachmentBlock("gopher.png", "another goated mascot")
+	if err != nil {
+		log.Fatal(err)
+	}
+	attachments = append(attachments, attachment)
+	markdown = append(markdown, gohost.MarkdownBlock("edited my first gohost post!"))
+
+	_, err = project.EditPost(post.Id(), false, markdown, attachments, tags, nil, headline+"!!!", false)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -84,6 +84,7 @@ func (u User) userInfo() (loggedInResponse, error) {
 	if err != nil {
 		return r, err
 	}
+
 	json.Unmarshal(data, &r)
 
 	return r, nil
@@ -126,6 +127,7 @@ func (u User) DefaultProject() (Project, error) {
 	if err != nil {
 		return Project{}, nil
 	}
+
 	defaultProject := projects.Projects[0]
 	return Project{defaultProject, u}, nil
 }
@@ -136,6 +138,7 @@ func (u User) GetProject(handle string) (Project, error) {
 	if err != nil {
 		return Project{}, err
 	}
+
 	for _, project := range projects.Projects {
 		if project.Handle == handle {
 			return Project{project, u}, nil
@@ -150,6 +153,7 @@ func (u User) getRawEditedProjects() (listEditedProjectsResponse, error) {
 	if err != nil {
 		return listEditedProjectsResponse{}, err
 	}
+
 	json.Unmarshal(data, &r)
 
 	return r, nil
@@ -161,6 +165,7 @@ func (u User) GetEditedProjects() ([]Project, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	projects := []Project{}
 	for _, project := range projectsRaw.Projects {
 		projects = append(projects, Project{project, u})

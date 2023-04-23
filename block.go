@@ -61,6 +61,7 @@ func AttachmentBlock(filepath, altText string) (Attachment, error) {
 	if err != nil {
 		return Attachment{}, err
 	}
+
 	filename := stat.Name()
 	sl := strings.Split(filename, ".")
 	contentType := mime.TypeByExtension("." + strings.ToLower(sl[len(sl)-1]))
@@ -153,6 +154,7 @@ func (a *Attachment) upload(client *http.Client, postId int, project Project) er
 
 // creates the url encoded form that starts the attachment process
 func makeForm(filename, contentType string, contentLength int64, height, width int) []byte {
+	// literally a subset of Attachment because I didn't want to export the fields in the Attachment struct
 	type form struct {
 		Filename      string `json:"filename"`
 		ContentType   string `json:"content_type"`
@@ -188,10 +190,12 @@ func doSpacesForm(r requiredFieldsResponse, filename string, file *os.File) (str
 	h.Set("Content-Disposition",
 		fmt.Sprintf(`form-data; name="file"; filename="%s"`, escapeQuotes(filename)))
 	h.Set("Content-Type", r.ContentType)
+
 	p, err := writer.CreatePart(h)
 	if err != nil {
 		return "", nil, err
 	}
+
 	_, err = io.Copy(p, file)
 	if err != nil {
 		return "", nil, err
