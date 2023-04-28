@@ -17,7 +17,7 @@ or with an email and password:
 For more on what to do next, check out the [example](https://github.com/curtywill/gohost/blob/main/_examples/example.go).
 # Cohost Terminology
 - Project: page that a user can edit   
-- Blocks: the blocks of attachments and text that make up posts. Get representations of these using the AttachmentBlock and MarkdownBlock functions.
+- Blocks: the blocks of attachments and text that make up posts. Get representations of these using the Attachment and Markdown structs.
 # Upcoming Features
 - View a post's share tree
 - View comments on posts
