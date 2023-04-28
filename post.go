@@ -64,7 +64,7 @@ func (p Post) Blocks() ([]Markdown, []Attachment) {
 		if block.Type == "attachment" {
 			attachments = append(attachments, Attachment{block: *block.Attachment})
 		} else {
-			markdown = append(markdown, Markdown{*block.Markdown})
+			markdown = append(markdown, Markdown{block.Markdown.Content})
 		}
 	}
 	return markdown, attachments

@@ -22,25 +22,23 @@ import (
 )
 
 type Markdown struct {
-	block markdownBlockResponse
-}
-
-// Returns a markdown block that represent text data on a Cohost post
-func MarkdownBlock(content string) Markdown {
-	block := markdownBlockResponse{Content: content}
-	return Markdown{block}
+	Content string
 }
 
 func (m Markdown) getBlock() blocksResponse {
+	// extracting content like this to suppress "should convert instead of using struct literal"
+	// i know  its stupid go leave me alone bxtch
+	content := m.Content
 	return blocksResponse{
 		Type:     "markdown",
-		Markdown: &m.block,
+		Markdown: &markdownBlockResponse{content},
 	}
 }
 
 type Attachment struct {
+	Filepath      string
+	AltText       string
 	block         attachmentBlockResponse
-	filepath      string
 	filename      string
 	contentType   string
 	contentLength int64
@@ -48,35 +46,40 @@ type Attachment struct {
 	width         int
 }
 
-// Returns an Attachment struct that contains information about an image given a filepath.
-// Can return a path error.
-func AttachmentBlock(filepath, altText string) (Attachment, error) {
-	file, err := os.Open(filepath)
+func (a Attachment) FileUrl() string {
+	return a.block.FileURL
+}
+
+func (a *Attachment) initAttachment() error {
+	file, err := os.Open(a.Filepath)
 	if err != nil {
-		return Attachment{}, err
+		return err
 	}
 	defer file.Close()
 
-	stat, err := os.Stat(filepath)
+	stat, err := os.Stat(a.Filepath)
 	if err != nil {
-		return Attachment{}, err
+		return err
 	}
 
 	filename := stat.Name()
+	a.filename = filename
 	sl := strings.Split(filename, ".")
-	contentType := mime.TypeByExtension("." + strings.ToLower(sl[len(sl)-1]))
-	contentLength := stat.Size()
+	a.contentType = mime.TypeByExtension("." + strings.ToLower(sl[len(sl)-1]))
+	a.contentLength = stat.Size()
 
 	img, _, err := image.DecodeConfig(file)
 	if err != nil {
-		return Attachment{}, err
+		return err
+	}
+	a.height = img.Height
+	a.width = img.Width
+
+	a.block = attachmentBlockResponse{
+		AltText: a.AltText,
 	}
 
-	block := attachmentBlockResponse{
-		AltText: altText,
-	}
-
-	return Attachment{block, filepath, filename, contentType, contentLength, img.Height, img.Width}, nil
+	return nil
 }
 
 func (a Attachment) getBlock() blocksResponse {
@@ -92,6 +95,11 @@ func (a Attachment) getBlock() blocksResponse {
 func (a *Attachment) upload(client *http.Client, postId int, project Project) error {
 	if a.block.AttachmentId != "" {
 		return nil
+	}
+	// fill Attachment struct before we start uploading
+	err := a.initAttachment()
+	if err != nil {
+		return err
 	}
 
 	form := makeForm(a.filename, a.contentType, a.contentLength, a.height, a.width)
@@ -110,7 +118,7 @@ func (a *Attachment) upload(client *http.Client, postId int, project Project) er
 	}
 	json.Unmarshal(data, &r)
 
-	file, err := os.Open(a.filepath)
+	file, err := os.Open(a.Filepath)
 	if err != nil {
 		return err
 	}
@@ -152,7 +160,7 @@ func (a *Attachment) upload(client *http.Client, postId int, project Project) er
 
 // helper functions for Upload
 
-// creates the url encoded form that starts the attachment process
+// creates the form that starts the attachment process
 func makeForm(filename, contentType string, contentLength int64, height, width int) []byte {
 	// literally a subset of Attachment because I didn't want to export the fields in the Attachment struct
 	type form struct {

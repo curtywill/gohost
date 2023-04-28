@@ -25,14 +25,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// make our first image block with some alt text! can pass an absolute path as well
-	attachment, err := gohost.AttachmentBlock("eggbug.jpg", "goated mascot")
-	if err != nil {
-		log.Fatal(err)
-	}
-	// build our slices of attachments and markdown
-	attachments := []gohost.Attachment{attachment}
-	markdown := []gohost.Markdown{gohost.MarkdownBlock("my first gohost post!")}
+	// every cohost post is made using blocks of attachments and markdown
+	// can make both by using composite literals like these!
+	attachments := []gohost.Attachment{gohost.Attachment{Filepath: "eggbug.jpg", AltText: "goated mascot"}}
+	markdown := []gohost.Markdown{gohost.Markdown{"my first gohost post!"}}
 
 	tags := []string{"golang", "API", "gohost"}
 	headline := "cohost is awesome"
@@ -40,15 +36,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	// made our first post onto the default project, now lets edit
-	attachment, err = gohost.AttachmentBlock("gopher.png", "another goated mascot")
-	if err != nil {
-		log.Fatal(err)
-	}
 	// can append more attachments and markdown to get added to EditPost
 	// can also get blocks using post.Blocks()
-	attachments = append(attachments, attachment)
-	markdown = append(markdown, gohost.MarkdownBlock("edited my first gohost post!"))
+	attachments = append(attachments, gohost.Attachment{Filepath: "gopher.png", AltText: "another goated mascot"})
+	markdown = append(markdown, gohost.Markdown{"edited my first gohost post!"})
 
 	// edit post using the Id() getter from Post
 	_, err = project.EditPost(post.Id(), false, markdown, attachments, tags, nil, headline+"!!!", false)
