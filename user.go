@@ -129,7 +129,7 @@ func (u User) DefaultProject() (Project, error) {
 	}
 
 	defaultProject := projects.Projects[0]
-	return Project{defaultProject, u}, nil
+	return Project{true, defaultProject, u}, nil
 }
 
 // Retrieve one of your projects by its handle
@@ -141,7 +141,7 @@ func (u User) GetProject(handle string) (Project, error) {
 
 	for _, project := range projects.Projects {
 		if project.Handle == handle {
-			return Project{project, u}, nil
+			return Project{true, project, u}, nil
 		}
 	}
 	return Project{}, fmt.Errorf("no such project found")
@@ -166,10 +166,20 @@ func (u User) GetEditedProjects() ([]Project, error) {
 		return nil, err
 	}
 
-	projects := []Project{}
-	for _, project := range projectsRaw.Projects {
-		projects = append(projects, Project{project, u})
+	projects := make([]Project, len(projectsRaw.Projects))
+	for i, project := range projectsRaw.Projects {
+		projects[i] = Project{true, project, u}
 	}
 
 	return projects, nil
+}
+
+func (u User) resolveSecondaryProject(info editedProjectResponse) Project {
+	editedProjects, _ := u.getRawEditedProjects()
+	for _, project := range editedProjects.Projects {
+		if project.ProjectId == info.ProjectId {
+			return Project{true, info, u}
+		}
+	}
+	return Project{false, info, u}
 }

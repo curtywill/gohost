@@ -49,8 +49,8 @@ func (p Post) PlainTextBody() string {
 	return p.info.PlainTextBody
 }
 
-func (p Post) PostingProject(u User) Project {
-	return Project{p.info.PostingProject, u}
+func (p Post) PostingProject() Project {
+	return p.project.u.resolveSecondaryProject(p.info.PostingProject)
 }
 
 func (p Post) Url() string {
@@ -68,4 +68,20 @@ func (p Post) Blocks() ([]Markdown, []Attachment) {
 		}
 	}
 	return markdown, attachments
+}
+
+func (p Post) ShareTree() []Post {
+	shareTree := make([]Post, len(p.info.ShareTree))
+	for i, shareInfo := range p.info.ShareTree {
+		shareTree[i] = Post{p.project, shareInfo}
+	}
+	return shareTree
+}
+
+func (p Post) RelatedProjects() []Project {
+	relatedProjects := make([]Project, len(p.info.RelatedProjects))
+	for i, relatedProject := range p.info.RelatedProjects {
+		relatedProjects[i] = p.project.u.resolveSecondaryProject(relatedProject)
+	}
+	return relatedProjects
 }

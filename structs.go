@@ -40,21 +40,22 @@ type projectPostsResponse struct {
 
 // add rest of stuff
 type itemsResponse struct {
-	PostId                   int                   `json:"postId"`
-	Headline                 string                `json:"headline"`
-	PublishedAt              string                `json:"publishedAt"`
-	Filename                 string                `json:"filename"`
-	State                    int                   `json:"state"`
-	NumComments              int                   `json:"numComments"`
-	NumSharedComments        int                   `json:"numSharedComments"`
-	ContentWarnings          []string              `json:"cws"`
-	Tags                     []string              `json:"tags"`
-	Blocks                   []blocksResponse      `json:"blocks"`
-	PlainTextBody            string                `json:"plainTextBody"`
-	PostingProject           editedProjectResponse `json:"postingProject"`
-	TransparentShareOfPostId int                   `json:"transparentShareOfPostId"`
-	ShareTree                []itemsResponse       `json:"shareTree"`
-	Url                      string                `json:"singlePostPageUrl"`
+	PostId                   int                     `json:"postId"`
+	Headline                 string                  `json:"headline"`
+	PublishedAt              string                  `json:"publishedAt"`
+	Filename                 string                  `json:"filename"`
+	State                    int                     `json:"state"`
+	NumComments              int                     `json:"numComments"`
+	NumSharedComments        int                     `json:"numSharedComments"`
+	ContentWarnings          []string                `json:"cws"`
+	Tags                     []string                `json:"tags"`
+	Blocks                   []blocksResponse        `json:"blocks"`
+	PlainTextBody            string                  `json:"plainTextBody"`
+	PostingProject           editedProjectResponse   `json:"postingProject"`
+	TransparentShareOfPostId int                     `json:"transparentShareOfPostId"`
+	ShareTree                []itemsResponse         `json:"shareTree"`
+	RelatedProjects          []editedProjectResponse `json:"relatedProjects"`
+	Url                      string                  `json:"singlePostPageUrl"`
 }
 
 // blocks are pointers to get an empty value (nil in this case) for omitempty to work

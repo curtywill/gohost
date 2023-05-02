@@ -9,8 +9,9 @@ import (
 )
 
 type Project struct {
-	info editedProjectResponse
-	u    User
+	editable bool
+	info     editedProjectResponse
+	u        User
 }
 
 func (p Project) AvatarShape() string {
@@ -83,9 +84,9 @@ func (p Project) GetPosts(page int) ([]Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	posts := []Post{}
-	for _, post := range postsRaw.Items {
-		posts = append(posts, Post{p, post})
+	posts := make([]Post, len(postsRaw.Items))
+	for i, post := range postsRaw.Items {
+		posts[i] = Post{p, post}
 	}
 	return posts, nil
 }
