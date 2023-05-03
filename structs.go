@@ -56,6 +56,7 @@ type itemsResponse struct {
 	ShareTree                []itemsResponse         `json:"shareTree"`
 	RelatedProjects          []editedProjectResponse `json:"relatedProjects"`
 	Url                      string                  `json:"singlePostPageUrl"`
+	AstMap                   AstMap                  `json:"astMap"`
 }
 
 // blocks are pointers to get an empty value (nil in this case) for omitempty to work
@@ -74,6 +75,13 @@ type attachmentBlockResponse struct {
 
 type markdownBlockResponse struct {
 	Content string `json:"content"`
+}
+
+type AstMap struct {
+	Initial        string `json:"initial"`
+	InitialLength  int    `json:"initialLength"`
+	Expanded       string `json:"expanded"`
+	ExpandedLength int    `json:"expandedLength"`
 }
 
 type attachStartResponse struct {

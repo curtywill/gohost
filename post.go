@@ -2,7 +2,6 @@ package gohost
 
 import "time"
 
-// TODO: add rest of getter functions
 type Post struct {
 	project Project
 	info    itemsResponse
@@ -84,4 +83,8 @@ func (p Post) RelatedProjects() []Project {
 		relatedProjects[i] = p.project.u.resolveSecondaryProject(relatedProject)
 	}
 	return relatedProjects
+}
+
+func (p Post) AstMap() AstMap {
+	return p.info.AstMap
 }
