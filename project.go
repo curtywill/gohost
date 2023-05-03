@@ -104,6 +104,9 @@ type postRequest struct {
 // Returns a Post struct that contains info about the post, including the postId needed for editing!
 // Returns an empty Post in the case of a draft or an error
 func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) (Post, error) {
+	if !p.editable {
+		return Post{}, fmt.Errorf("you cannot edit %s", p.Handle())
+	}
 	// convert nil values to empty slices for marshalling
 	if markdown == nil {
 		markdown = []Markdown{}
@@ -191,6 +194,9 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 }
 
 func (p Project) EditPost(postId int, adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) (Post, error) {
+	if !p.editable {
+		return Post{}, fmt.Errorf("you cannot edit %s", p.Handle())
+	}
 	// convert nil values to empty slices for marshalling
 	if markdown == nil {
 		markdown = []Markdown{}
