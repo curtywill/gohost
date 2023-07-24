@@ -31,6 +31,7 @@ jobs:
 
       - name: setup env unix
         run: |
+          # disable command workflow processing
           echo ::set-env name=GOPATH::${{ runner.workspace }}
           echo ::add-path::${{ runner.workspace }}/bin
           
