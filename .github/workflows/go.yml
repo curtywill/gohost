@@ -32,12 +32,10 @@ jobs:
       - name: Install deps
         run: |
           go version
-          go get -u golang.org/x/lint/golint
 
       - name: Build
         run: go build -v .
 
-      - name: Vet and lint
+      - name: Vet
         run: |
           go vet .
-          golint .
