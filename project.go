@@ -100,8 +100,10 @@ type postRequest struct {
 	PostState       int              `json:"postState"`
 }
 
-// Makes a post on your current project
+// Makes a post the given project
+//
 // Returns a Post struct that contains info about the post, including the postId needed for editing!
+//
 // Returns an empty Post in the case of a draft or an error
 func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) (Post, error) {
 	if !p.editable {
@@ -193,6 +195,11 @@ func (p Project) Post(adult bool, markdown []Markdown, attachments []Attachment,
 	return Post{}, fmt.Errorf("haven't added support for drafts yet")
 }
 
+// Edits the post represented by parameter postId
+//
+// Returns a Post struct that contains info about the post, including the postId needed for editing!
+//
+// Returns an empty Post in the case of a draft or an error
 func (p Project) EditPost(postId int, adult bool, markdown []Markdown, attachments []Attachment, tags, cws []string, headline string, draft bool) (Post, error) {
 	if !p.editable {
 		return Post{}, fmt.Errorf("you cannot edit %s", p.Handle())

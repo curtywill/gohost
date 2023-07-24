@@ -14,12 +14,14 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
+// Represents an authenticated user
 type User struct {
 	cookie string
 	client *http.Client
 }
 
 // Start a user session with your connect.sid cookie from Cohost
+//
 // If you don't have any special needs for an HTTP client, pass it as nil
 func LoginWithCookie(client *http.Client, cookie string) (User, error) {
 	if client == nil {
@@ -32,6 +34,7 @@ func LoginWithCookie(client *http.Client, cookie string) (User, error) {
 }
 
 // Start a user session with your Cohost email and password
+//
 // If you don't have any special needs for an HTTP client, pass it as nil
 func LoginWithPass(client *http.Client, email, password string) (User, error) {
 	// i know nothing of cryptography so shoutout to @valknight (for code samples) and @iliana (for algorithm)
